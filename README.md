@@ -1,45 +1,22 @@
-[![Latest PyPI Release](https://img.shields.io/pypi/v/pyxdf)](https://pypi.org/project/pyxdf/)
-[![Latest Conda Release](https://img.shields.io/conda/vn/conda-forge/pyxdf)](https://anaconda.org/conda-forge/pyxdf)
-![Python 3.5+](https://img.shields.io/badge/python-3.5+-green.svg)
-![License](https://img.shields.io/github/license/xdf-modules/xdf-python)
+# PyXDF - Chunk Dejitter Extension
+This fork of the [pyxdf repository](https://github.com/xdf-modules/pyxdf/blob/main/pyxdf) provides a function to dejitter signal timestamps when samples are received as chunks without temporal information for samples within those chunks (e.g., when OpenBCI Cyton data is streamed via LSL using the [OpenBCI_LSL](https://github.com/openbci-archive/OpenBCI_LSL/) python repository).
 
-pyXDF
-=====
+## Usage
+1. Load the xdf streams with the pyxdf.load_xdf() and set dejitter_timestamps=False.
+2. Extract the stream of interest and pass it to chunk_jitter_removal().
 
-pyXDF is a Python importer for [XDF](https://github.com/sccn/xdf) files.
-
-## Sample usage
-
+## Example
 ``` python
-import pyxdf
-import matplotlib.pyplot as plt
-import numpy as np
+# Load xdf file
+data, header = pyxdf.load_xdf('recording.xdf', dejitter_timestamps=False)
 
-data, header = pyxdf.load_xdf('test.xdf')
+# Select stream of interest
+stream = data[0] 
 
-for stream in data:
-    y = stream['time_series']
+# Set parameters for chunk extrapolation
+fs = 250 # Set sampling frequency
+chunk_size = 120 # Set expected size of chunks
 
-    if isinstance(y, list):
-        # list of strings, draw one vertical line for each marker
-        for timestamp, marker in zip(stream['time_stamps'], y):
-            plt.axvline(x=timestamp)
-            print(f'Marker "{marker[0]}" @ {timestamp:.2f}s')
-    elif isinstance(y, np.ndarray):
-        # numeric data, draw as lines
-        plt.plot(stream['time_stamps'], y)
-    else:
-        raise RuntimeError('Unknown stream format')
-
-plt.show()
+# Correct time stamps
+stream, n_short_chunks = chunk_jitter_removal(stream, fs, chunk_size)
 ```
-
-## Installation
-
-The latest stable version can be installed with `pip install pyxdf`.
-
-For the latest development version, use `pip install git+https://github.com/xdf-modules/pyxdf.git`.
-
-## For maintainers
-
-A new release is automatically uploaded to PyPI. Therefore, as soon as a new release is created on GitHub (using a tag labeled e.g. `v1.16.3`), a PyPI package is created with the version number matching the release tag.
